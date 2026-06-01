@@ -19,6 +19,7 @@ the actions that use them.
 - **CRM & Kanban:** `manage_crm_records`, `manage_crm_fields`, `manage_crm_filters`,
   `search_crm`, `manage_kanbans`
 - **Settings:** `manage_providers`, `manage_channels`, `manage_webhooks`, `manage_contacts`
+- **WhatsApp:** `manage_connections`, `manage_whatsapp`
 - **Chat:** `manage_sessions`, `manage_messages`, `manage_chat_notes`
 
 ---
@@ -874,6 +875,36 @@ Delete a contact. **Request fields:** `contactId: string` (required). **Response
 #### `manage_contacts` — action: `search`
 
 Find a contact by identifier. **Request fields:** `type: string` (required, ∈ phone, email, external_id, whatsapp_id), `value: string` (required). **Response:** the matching contact(s).
+
+---
+
+## WhatsApp
+
+See `channels.md` for the end-to-end setup flow. All actions require `authToken`.
+
+### `manage_connections`
+
+Manage WhatsApp (Meta Cloud API "BYOT") connections.
+
+- **`create`** — required: `connectionType` (`"whatsapp_custom_app"`), `name`, `accessToken`, `businessAccountId`; optional: `appId`, `appSecret`. Response: the connection incl. `connectionId`, `webhookUrl`, `webhookVerifyToken`, and available `phoneNumbers`.
+- **`list`** — optional `type`. Response: connections.
+- **`get`** — required `connectionId`. Response: the connection.
+- **`update`** — required `connectionId`; optional `name`, `accessToken`, `appId`, `appSecret`. Response: updated connection.
+- **`delete`** — required `connectionId`. Response: acknowledgement.
+- **`test`** — required `connectionId`; optional `pin`. Response: connection status + phone numbers + token status.
+- **`available-phones`** — required `connectionId`. Response: phone numbers on the connection.
+- **`phone-statuses`** — required `connectionId`. Response: per-phone registration status.
+- **`register-phone`** — required `connectionId`, `phoneNumberId`; optional `pin` (2FA). Response: registration result.
+- **`add-waba`** — required `connectionId` (+ WABA fields). Response: updated connection.
+- **`remove-waba`** — required `connectionId`, `wabaId`. Response: acknowledgement.
+
+### `manage_whatsapp`
+
+WhatsApp BYOT channel setup (links a connection's phone to a channel).
+
+- **`setup`** — required `channelId`, `connectionId`, `phoneNumberId`. Response: `{ success, displayPhoneNumber, businessName }`.
+- **`test-channel`** — required `channelId`. Response: channel test result.
+- **`webhook-info`** — required `channelId`. Response: webhook URL + verify token to configure in Meta.
 
 ---
 

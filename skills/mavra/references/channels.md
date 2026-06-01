@@ -2,26 +2,32 @@
 
 For `manage_channels` and `manage_contacts`.
 
-## ⚠️ WhatsApp connection setup is NOT available through this MCP (yet)
+## WhatsApp connection setup (via `manage_connections` + `manage_whatsapp`)
 
-Creating a WhatsApp **connection** (Meta credentials, phone-number registration, webhook
-verification) uses backend endpoints that the MCP does **not** expose:
-`/connections/*` and `/providers/whatsapp-byot/*`. Through the MCP you can only
-create/manage the channel record itself — not the underlying WhatsApp/Meta connection.
+Full WhatsApp (Meta Cloud API "BYOT") setup IS available through the MCP. The
+end-to-end flow:
 
-**To fully connect WhatsApp you must use the Mavra web app / REST API directly.** The
-end-to-end flow (for reference) is:
-1. `POST /connections` — provide Meta App ID/Secret, WABA id, access token → returns a
-   `connectionId`, webhook URL + verify token, and the available phone numbers.
-2. `POST /channels` — create the channel (type `whatsapp_byot`, the phone as `identifier`,
-   a `defaultAgentId`). *(This step IS doable via the MCP's `manage_channels:create`.)*
-3. `POST /providers/whatsapp-byot/setup` — link `channelId` + `connectionId` +
-   `phoneNumberId`.
-4. If required, `POST /connections/{id}/phones/{phoneId}/register` (optional 2FA PIN), and
-   configure the Meta webhook with the verify token from step 1.
+1. **Create the connection** — `manage_connections` `action: "create"` with
+   `connectionType: "whatsapp_custom_app"`, `name`, `accessToken` (Meta token),
+   `businessAccountId` (WABA id), optional `appId`/`appSecret`. The response includes the
+   `connectionId`, the webhook URL + verify token, and the available phone numbers.
+2. **Create the channel** — `manage_channels` `action: "create"` with type
+   `whatsapp_byot`, the phone as `identifier`, and a `defaultAgentId`. Returns `channelId`.
+3. **Link them** — `manage_whatsapp` `action: "setup"` with `channelId`, `connectionId`,
+   `phoneNumberId` (a phone id from step 1).
+4. **Register the phone if needed** — `manage_connections` `action: "register-phone"`
+   with `connectionId` + `phoneNumberId` (optional 2FA `pin`). Check status first with
+   `action: "phone-statuses"` or `"available-phones"`.
+5. **Configure the Meta webhook** — get the URL + verify token via `manage_whatsapp`
+   `action: "webhook-info"` (channelId) and set them in the Meta App. Verify the channel
+   with `action: "test-channel"`.
 
-> If you need WhatsApp connection management in the MCP, it requires adding
-> `manage_connections` + WhatsApp-BYOT tools to the server — currently a gap.
+`manage_connections` also supports `list`, `get`, `update`, `delete`, `test`, and
+`add-waba`/`remove-waba` (additional WhatsApp Business Accounts). See `tools.md` for the
+full typed field list of each action.
+
+> The unauthenticated Meta webhook callback routes (`/providers/whatsapp-byot/webhook/*`)
+> are called by Meta, not users, so they are intentionally not MCP tools.
 
 ## Channels (`manage_channels`)
 

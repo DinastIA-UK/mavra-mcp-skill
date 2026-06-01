@@ -107,10 +107,11 @@ array):
 
 ### Channels & WhatsApp
 
-You can create/edit channels with `manage_channels` (requires `name`, `type`,
-`identifier`, `defaultAgentId`). **Note:** full WhatsApp *connection* setup (Meta
-credentials, phone registration, webhook verification) is **not** available through this
-MCP — only via the Mavra web app. See `references/channels.md`.
+Create/edit channels with `manage_channels` (requires `name`, `type`, `identifier`,
+`defaultAgentId`). Full WhatsApp (Meta Cloud API) setup is also supported: create a
+connection with `manage_connections`, the channel with `manage_channels`, then link them
+with `manage_whatsapp` `action: "setup"`. See `references/channels.md` for the
+step-by-step flow.
 
 ## 4. When something goes wrong
 
@@ -127,5 +128,5 @@ Read these on demand for complete, typed detail:
 - **`references/prompt-syntax.md`** — the agent `customPrompt` `@`-decorator + `{{variable}}` language (essential for writing agents).
 - **`references/agents.md`** — all agent fields, providers/models, guardrails, knowledge base, media, versioning, testing, feedback.
 - **`references/crm.md`** — CRM records, custom field types, field groups, statuses, kanbans, filters, search.
-- **`references/channels.md`** — channel types, contacts, and the WhatsApp setup limitations.
+- **`references/channels.md`** — channel types, contacts, and the WhatsApp connection setup flow (`manage_connections` + `manage_whatsapp`).
 - **`references/chat-and-settings.md`** — sessions, messages (send vs send-as-agent vs human reply), chat notes, provider keys, webhooks + event types.
