@@ -59,6 +59,19 @@ The response includes the new agent's `id` (use it for `get` / `update` / `delet
 turn on guardrails later, call `manage_agents` `action: "update"` with `agentId` plus
 `guardrailsEnabled: true`.
 
+**Important — the `customPrompt` has a special syntax.** It is NOT just plain text: Mavra
+parses `@`-decorators and `{{variables}}` for flows, tool calls, CRM writes, transfers,
+follow-ups, and media. To write effective agents, read **`references/prompt-syntax.md`**.
+Quick taste:
+
+```
+@IF customer asks about pricing [price, cost]
+@THEN @Tool(SendPricingGuide)
+@ELSE Continue qualifying the lead.
+@END
+@updateCRM("Sales Pipeline", "status", "Mark 'Qualified' when budget is confirmed")
+```
+
 ### Add and find a CRM record
 
 Create with `manage_crm_records` `action: "create"` (`title` required):
@@ -92,6 +105,13 @@ array):
   "triggerTypes": ["crm_record_created"] }
 ```
 
+### Channels & WhatsApp
+
+You can create/edit channels with `manage_channels` (requires `name`, `type`,
+`identifier`, `defaultAgentId`). **Note:** full WhatsApp *connection* setup (Meta
+credentials, phone registration, webhook verification) is **not** available through this
+MCP — only via the Mavra web app. See `references/channels.md`.
+
 ## 4. When something goes wrong
 
 - **401** — the token expired: call `refresh`, then retry with the new `idToken`.
@@ -101,5 +121,11 @@ array):
 
 ## Reference
 
-Every tool, action, typed request field, and response shape is documented in
-`references/tools.md`. Read it when you need the complete field list for an action.
+Read these on demand for complete, typed detail:
+
+- **`references/tools.md`** — every tool, action, typed request field, and response shape.
+- **`references/prompt-syntax.md`** — the agent `customPrompt` `@`-decorator + `{{variable}}` language (essential for writing agents).
+- **`references/agents.md`** — all agent fields, providers/models, guardrails, knowledge base, media, versioning, testing, feedback.
+- **`references/crm.md`** — CRM records, custom field types, field groups, statuses, kanbans, filters, search.
+- **`references/channels.md`** — channel types, contacts, and the WhatsApp setup limitations.
+- **`references/chat-and-settings.md`** — sessions, messages (send vs send-as-agent vs human reply), chat notes, provider keys, webhooks + event types.
