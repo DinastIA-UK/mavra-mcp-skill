@@ -7,32 +7,36 @@ through the Mavra MCP server.
 
 ## Install
 
-### Claude Code (recommended: global, available in every project)
+Run this **from your project's root** to install the skill into that project
+(`./.claude/skills/mavra`):
 
 ```bash
-npx skills add DinastIA-UK/mavra-mcp-skill -g -a claude-code --copy
+npx github:DinastIA-UK/mavra-mcp-skill
+```
+
+Or install it **globally** (available in every project, `~/.claude/skills/mavra`):
+
+```bash
+npx github:DinastIA-UK/mavra-mcp-skill --global
 ```
 
 Then **restart Claude Code** and trigger it with `/mavra` (or just ask to "manage my
 Mavra account").
 
-- `-a claude-code` targets Claude Code explicitly. Without it, the interactive picker
-  may install to `.agents/skills/`, which **Claude Code does not read** — only
-  `.claude/skills/` (project) and `~/.claude/skills/` (global) are loaded.
-- `-g` installs globally (`~/.claude/skills/`) so it works in every project. Drop `-g`
-  to install into the current project only (`./.claude/skills/`); then open that project
-  in Claude Code.
-- `--copy` copies the files instead of symlinking (more reliable across clients).
-- A newly added skill requires a **Claude Code restart** to appear.
+> This uses the repo's own installer, which copies the skill into the directory Claude
+> Code actually reads (`.claude/skills/`). It runs on macOS, Windows, and Linux via
+> `npx` (Node only — no extra tooling).
 
-### Other clients
+### Alternative: the `skills` CLI
+
+The community [`skills`](https://github.com/vercel-labs/skills) CLI also works, but be
+explicit about the target or it may install to `.agents/skills/` (which Claude Code does
+not read):
 
 ```bash
-npx skills add DinastIA-UK/mavra-mcp-skill -a <your-client>
+npx skills add DinastIA-UK/mavra-mcp-skill -a claude-code --copy        # this project
+npx skills add DinastIA-UK/mavra-mcp-skill -a claude-code --copy -g     # global
 ```
-
-The `skills` CLI supports many agents (Cursor, Cline, Codex, …). Pick yours with `-a`,
-or run without `-a` to choose interactively.
 
 ## What it does
 

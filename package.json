@@ -1,0 +1,23 @@
+{
+  "name": "mavra-mcp-skill",
+  "version": "1.0.0",
+  "private": false,
+  "description": "Installable Agent Skill that teaches AI clients how to manage a Mavra account via the Mavra MCP server",
+  "type": "module",
+  "bin": {
+    "mavra-mcp-skill": "install.mjs"
+  },
+  "scripts": {
+    "install-skill": "node install.mjs",
+    "install-skill:global": "node install.mjs --global"
+  },
+  "files": [
+    "install.mjs",
+    "skills/"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DinastIA-UK/mavra-mcp-skill.git"
+  }
+}
