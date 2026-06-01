@@ -16,8 +16,9 @@ trigger it with `/mavra` or just ask to "manage my Mavra account".
 
 ## What it does
 
-- **Connects** your client to the Mavra MCP server (`scripts/connect.sh`, prod by
-  default; `--dev` for the dev environment).
+- **Connects** your client to the Mavra MCP server (`scripts/connect.mjs`, a
+  cross-platform Node script — macOS/Windows/Linux; prod by default, `--dev` for the
+  dev environment).
 - **Teaches** the login flow and the consolidated `manage_*` tools, with end-to-end
   recipes.
 - **References** every tool action with typed request fields and response payloads

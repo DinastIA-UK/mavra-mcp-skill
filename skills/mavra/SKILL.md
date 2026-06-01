@@ -17,16 +17,18 @@ chatting with your AI client, through the Mavra MCP server.
 
 ## 1. Connect (once)
 
-Register the Mavra MCP server in this client by running the bundled script:
+Register the Mavra MCP server in this client by running the bundled script with Node
+(works on macOS, Windows, and Linux):
 
 ```bash
-bash "${CLAUDE_SKILL_DIR}/scripts/connect.sh"        # production
-bash "${CLAUDE_SKILL_DIR}/scripts/connect.sh" --dev  # development
+node "${CLAUDE_SKILL_DIR}/scripts/connect.mjs"        # production
+node "${CLAUDE_SKILL_DIR}/scripts/connect.mjs" --dev  # development
 ```
 
 `${CLAUDE_SKILL_DIR}` is set by Claude Code. In other clients, run the
-`scripts/connect.sh` file from this skill's folder, or add a remote (HTTP) MCP server
-pointing at `https://api.maiacompany.io/mcp` (or `https://dev.api.maiacompany.io/mcp`).
+`scripts/connect.mjs` file from this skill's folder with `node`, or add a remote (HTTP)
+MCP server pointing at `https://api.maiacompany.io/mcp` (or
+`https://dev.api.maiacompany.io/mcp`).
 
 ## 2. Log in
 
