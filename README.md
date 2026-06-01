@@ -38,6 +38,25 @@ npx skills add DinastIA-UK/mavra-mcp-skill -a claude-code --copy        # this p
 npx skills add DinastIA-UK/mavra-mcp-skill -a claude-code --copy -g     # global
 ```
 
+## Updating
+
+Re-run the install command — the installer **removes the old skill folder and copies
+the latest**, so updates are a clean sync (no stale files). Then **restart your client**.
+
+Because `npx` caches packages, force the newest version from GitHub:
+
+```bash
+npx --yes github:DinastIA-UK/mavra-mcp-skill@latest            # this project
+npx --yes github:DinastIA-UK/mavra-mcp-skill@latest --global   # all projects
+```
+
+The install output prints the version it just installed (e.g. `✓ Installed the Mavra
+skill v1.0.0 …`) so you can confirm the update took.
+
+> Tip: the skill's tool reference (`references/`) is a snapshot of the Mavra MCP server.
+> When the server adds tools (e.g. WhatsApp management), update the skill to get the new
+> docs.
+
 ## What it does
 
 - **Connects** your client to the Mavra MCP server (`scripts/connect.mjs`, a

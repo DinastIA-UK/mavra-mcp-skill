@@ -1,6 +1,6 @@
 {
   "name": "mavra-mcp-skill",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": false,
   "description": "Installable Agent Skill that teaches AI clients how to manage a Mavra account via the Mavra MCP server",
   "type": "module",

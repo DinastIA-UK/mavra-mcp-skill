@@ -18,6 +18,7 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  rmSync,
   writeFileSync,
 } from 'node:fs';
 import { homedir } from 'node:os';
@@ -72,10 +73,17 @@ const DESCRIPTION =
 const projectRoot = process.cwd();
 const userRoot = homedir();
 
-/** Copy the whole skill folder (SKILL.md + scripts/ + references/) verbatim. */
+/**
+ * Copy the whole skill folder (SKILL.md + scripts/ + references/) verbatim.
+ * Removes any existing install first so an update is a clean sync (no stale files
+ * left behind from a previous version).
+ */
 function installSkillFolder(baseDirParts) {
   const baseDir = join(...baseDirParts);
   const dest = join(baseDir, SKILL_NAME);
+  if (existsSync(dest)) {
+    rmSync(dest, { recursive: true, force: true });
+  }
   mkdirSync(baseDir, { recursive: true });
   cpSync(src, dest, { recursive: true });
   return dest;
@@ -150,7 +158,16 @@ const scope = isGlobal && client !== 'cursor' && client !== 'windsurf'
   ? 'globally (all projects)'
   : 'into this project';
 
-console.log(`✓ Installed the Mavra skill for ${client} ${scope}:`);
+let version = '';
+try {
+  version = JSON.parse(readFileSync(join(here, 'package.json'), 'utf8')).version;
+} catch {
+  // version is best-effort
+}
+
+console.log(
+  `✓ Installed the Mavra skill${version ? ` v${version}` : ''} for ${client} ${scope}:`
+);
 console.log(`    ${dest}`);
 if (note) {
   console.log('');
