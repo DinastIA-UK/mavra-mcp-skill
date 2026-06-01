@@ -7,7 +7,7 @@ description: >-
   "my CRM", "my agents", "manage my pipeline", connecting the Mavra MCP server.
 metadata:
   author: mavra
-  version: "1.0.0"
+  version: "1.1.0"
 ---
 
 # Managing Mavra via MCP
