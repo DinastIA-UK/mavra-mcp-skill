@@ -7,12 +7,32 @@ through the Mavra MCP server.
 
 ## Install
 
+### Claude Code (recommended: global, available in every project)
+
 ```bash
-npx skills add DinastIA-UK/mavra-mcp-skill
+npx skills add DinastIA-UK/mavra-mcp-skill -g -a claude-code --copy
 ```
 
-This installs the `mavra` skill into your client's skills directory. In Claude Code,
-trigger it with `/mavra` or just ask to "manage my Mavra account".
+Then **restart Claude Code** and trigger it with `/mavra` (or just ask to "manage my
+Mavra account").
+
+- `-a claude-code` targets Claude Code explicitly. Without it, the interactive picker
+  may install to `.agents/skills/`, which **Claude Code does not read** — only
+  `.claude/skills/` (project) and `~/.claude/skills/` (global) are loaded.
+- `-g` installs globally (`~/.claude/skills/`) so it works in every project. Drop `-g`
+  to install into the current project only (`./.claude/skills/`); then open that project
+  in Claude Code.
+- `--copy` copies the files instead of symlinking (more reliable across clients).
+- A newly added skill requires a **Claude Code restart** to appear.
+
+### Other clients
+
+```bash
+npx skills add DinastIA-UK/mavra-mcp-skill -a <your-client>
+```
+
+The `skills` CLI supports many agents (Cursor, Cline, Codex, …). Pick yours with `-a`,
+or run without `-a` to choose interactively.
 
 ## What it does
 
