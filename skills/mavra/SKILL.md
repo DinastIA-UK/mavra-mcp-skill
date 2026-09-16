@@ -3,11 +3,12 @@ name: mavra
 description: >-
   Use when the user wants to manage their Mavra account through an AI client —
   creating or editing AI agents, tools, kanbans, CRM records, channels, webhooks,
-  contacts, sessions, or messages via the Mavra MCP server. Triggers: "Mavra",
-  "my CRM", "my agents", "manage my pipeline", connecting the Mavra MCP server.
+  contacts, sessions, messages, WhatsApp templates, or bulk messaging campaigns
+  via the Mavra MCP server. Triggers: "Mavra", "my CRM", "my agents", "manage my
+  pipeline", "send a campaign", "bulk message", connecting the Mavra MCP server.
 metadata:
   author: mavra
-  version: "1.1.0"
+  version: "1.2.0"
 ---
 
 # Managing Mavra via MCP
@@ -94,6 +95,38 @@ another agent:
   "targetAgentId": "AGENT_ID" }
 ```
 
+### Run a bulk campaign
+
+Campaigns have three parts: an **audience** (who), a **campaign** (the goal), and one
+or more **deliveries** (what/when/how fast). Deliveries are what actually send.
+
+```
+manage_audiences  preview   → confirm the real size FIRST
+manage_audiences  create    → audienceId
+manage_campaigns  create    → campaignId
+manage_templates  search    → an APPROVED templateName (WhatsApp only)
+manage_deliveries create    → deliveryId
+manage_campaigns  launch    → SENDS
+campaign_reports  report    → results
+```
+
+**`launch` sends real WhatsApp messages to real people and cannot be undone.** Always
+call `manage_audiences` `preview` first, tell the user the real number, and get an
+explicit go-ahead before launching. Never treat "set up a campaign" as permission to
+send one.
+
+```json
+{ "action": "preview", "authToken": "IDTOKEN",
+  "definition": { "type": "crm_filter", "kanbanId": "KANBAN_ID", "status": "qualified" } }
+```
+
+To stop a running campaign, use `pause` (recoverable) rather than `cancel`, which
+permanently skips every pending recipient and cannot be resumed.
+
+Read **`references/campaigns.md`** before building one — it covers the three audience
+types, live vs snapshot mode, the three-phase contact-list upload, quiet hours and
+throttling, and what each failure mode means.
+
 ### Configure a webhook
 
 `manage_webhooks` `action: "create"` with `name`, `url`, and `triggerTypes` (a string
@@ -130,3 +163,4 @@ Read these on demand for complete, typed detail:
 - **`references/crm.md`** — CRM records, custom field types, field groups, statuses, kanbans, filters, search.
 - **`references/channels.md`** — channel types, contacts, and the WhatsApp connection setup flow (`manage_connections` + `manage_whatsapp`).
 - **`references/chat-and-settings.md`** — sessions, messages (send vs send-as-agent vs human reply), chat notes, provider keys, webhooks + event types.
+- **`references/campaigns.md`** — bulk campaigns: audiences, deliveries, launching safely, contact-list uploads, reporting.
