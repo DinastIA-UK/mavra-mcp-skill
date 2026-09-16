@@ -19,7 +19,9 @@ the actions that use them.
 - **CRM & Kanban:** `manage_crm_records`, `manage_crm_fields`, `manage_crm_filters`,
   `search_crm`, `manage_kanbans`
 - **Settings:** `manage_providers`, `manage_channels`, `manage_webhooks`, `manage_contacts`
-- **WhatsApp:** `manage_connections`, `manage_whatsapp`
+- **WhatsApp:** `manage_connections`, `manage_whatsapp`, `manage_templates`
+- **Campaigns:** `manage_campaigns`, `manage_audiences`, `manage_deliveries`,
+  `campaign_reports`
 - **Chat:** `manage_sessions`, `manage_messages`, `manage_chat_notes`
 
 ---
@@ -1034,3 +1036,326 @@ Create or update the note on a message.
 #### `manage_chat_notes` — action: `delete`
 
 Delete the note on a message. **Request fields:** `channelId: string`, `sessionId: string`, `messageId: string` (all required). **Response:** acknowledgement.
+
+---
+
+## Templates
+
+### `manage_templates`
+
+WhatsApp message templates — the pre-approved messages a WhatsApp channel may send
+outside the 24-hour customer-service window. A campaign delivery on a WhatsApp
+channel must reference an **APPROVED** template.
+
+Templates belong to a **WABA**, not a connection, so most actions need both
+`connectionId` and `wabaId` (get them from `manage_connections`).
+
+> **Auth exception.** Every action here except `search` is authenticated by Cognito
+> only — an **API token is rejected with a 401**. Pass the `idToken` from `login`.
+> `search` accepts either credential.
+
+#### `manage_templates` — action: `list`
+
+List a WABA's templates.
+
+**Request fields:**
+
+| field | type | required | description |
+|-------|------|----------|-------------|
+| connectionId | string | yes | The connection id. |
+| wabaId | string | yes | The WhatsApp Business Account id. |
+| status | "APPROVED" \| "PENDING" \| "REJECTED" | no | Filter. Campaigns need APPROVED. |
+| includeDeleted | boolean | no | Defaults to false. |
+| limit | number | no | Page size. |
+
+**Response:** `{ templates: Template[] }`.
+
+#### `manage_templates` — action: `get`
+
+Get one template with its components and `{{n}}` placeholders.
+
+**Request fields:** `connectionId`, `wabaId`, `templateName`, `languageCode` (all
+required — one name can exist in several languages).
+
+**Response:** the Template object.
+
+#### `manage_templates` — action: `create`
+
+Create a template and submit it to Meta for approval.
+
+**Request fields:**
+
+| field | type | required | description |
+|-------|------|----------|-------------|
+| connectionId | string | yes | The connection id. |
+| wabaId | string | yes | The WABA id. |
+| name | string | yes | Lowercase with underscores, e.g. `black_friday`. |
+| language | string | yes | e.g. `en_US`, `pt_BR`. |
+| category | "MARKETING" \| "UTILITY" \| "AUTHENTICATION" | yes | Meta category. |
+| components | array | yes | `{ type: "HEADER" \| "BODY" \| "FOOTER" \| "BUTTONS", … }`. BODY text uses `{{1}}`, `{{2}}`. |
+| headerMediaUrl | string | no | For an IMAGE/VIDEO/DOCUMENT header. |
+
+Approval is **asynchronous** — the template starts `PENDING` and cannot be sent
+until Meta marks it `APPROVED` (minutes to hours). A rejected template damages the
+WABA's quality rating, so confirm the wording with the user before submitting.
+
+**Response:** `{ template, metaTemplateId }`.
+
+#### `manage_templates` — action: `update`
+
+Update a template's `components`. Re-submits it to Meta for approval.
+
+**Request fields:** `connectionId`, `wabaId`, `templateName`, `languageCode`,
+`components` (all required).
+
+**Response:** `{ template, success }`.
+
+#### `manage_templates` — action: `delete`
+
+Delete a template. **Request fields:** `connectionId`, `wabaId`, `templateName`,
+`languageCode` (all required). Any delivery still referencing it fails at send time.
+
+#### `manage_templates` — action: `save-mappings`
+
+Save what each `{{n}}` placeholder should be filled with. These become the defaults
+a delivery's `message.variableMapping` builds on.
+
+**Request fields:** `connectionId`, `wabaId`, `templateName`, `languageCode`,
+`variableMappings` (array) — all required.
+
+#### `manage_templates` — action: `sync`
+
+Re-pull the WABA's templates from Meta. Run this when a template was created or
+approved outside Mavra, or a status looks stale.
+
+**Request fields:** `connectionId`, `wabaId` (required); `force?: boolean` to bypass
+the sync cooldown.
+
+#### `manage_templates` — action: `search`
+
+Full-text search a **channel's** templates — the fastest way to find a sendable
+template name when you already know the channel. Accepts an API token as well as an
+idToken. Requires Typesense; returns 400 if search is not configured.
+
+**Request fields:** `channelId: string` (required); `q?`, `status?` (defaults to
+APPROVED), `language?`, `limit?`, `offset?`.
+
+---
+
+## Campaigns
+
+Bulk messaging. A **campaign** is a container with a conversion goal; the sending is
+done by its **deliveries**, each pairing an **audience** (who) with a channel,
+message and schedule (what, when, how fast). See `references/campaigns.md` for the
+end-to-end workflow and the safety rules.
+
+### `manage_campaigns`
+
+#### `manage_campaigns` — action: `create`
+
+Create a draft campaign.
+
+**Request fields:**
+
+| field | type | required | description |
+|-------|------|----------|-------------|
+| name | string | yes | Campaign name. |
+| description | string | no | Free text. |
+| goal | object | yes | `{ type: "reached_status" \| "reached_kanban", attributionWindowDays: number, targetStatus?, targetKanbanId? }`. |
+
+**Response:** `{ campaign }` — keep `campaign.campaignId`.
+
+#### `manage_campaigns` — action: `get`
+
+Get a campaign and its aggregated stats. **Request fields:** `campaignId` (required).
+
+#### `manage_campaigns` — action: `list`
+
+List campaigns newest-first. **Request fields:** `status?` (one of `draft`,
+`scheduled`, `freezing`, `sending`, `paused`, `completed`, `cancelled`, `failed`),
+`limit?`, `cursor?`. **Response:** `{ items, nextCursor? }` — pass `nextCursor` back
+as `cursor`.
+
+#### `manage_campaigns` — action: `update`
+
+Update `name`, `description` or `goal`. **Only while the campaign is `draft` or
+`scheduled`** — anything later returns 409. **Request fields:** `campaignId`
+(required) plus the fields to change.
+
+#### `manage_campaigns` — action: `delete`
+
+Delete a campaign. **Request fields:** `campaignId` (required).
+
+#### `manage_campaigns` — action: `launch`
+
+**This sends real WhatsApp messages and cannot be undone.** Each delivery freezes
+its own audience snapshot, then sends immediately or registers a scheduled send.
+
+**Request fields:**
+
+| field | type | required | description |
+|-------|------|----------|-------------|
+| campaignId | string | yes | The campaign to launch. |
+| deliveryIds | string[] | no | Launch a subset. Default: every draft/scheduled delivery. |
+| sendAt | number | no | Epoch ms; overrides the scheduled time. |
+
+**Before calling:** run `manage_audiences` action `preview` and tell the user the
+real audience size, then get an explicit go-ahead.
+
+**Response:** `{ status, audienceTotal }`.
+
+#### `manage_campaigns` — actions: `pause` / `resume` / `cancel`
+
+All take `campaignId` (required) and return `{ status, skipped }`.
+
+- `pause` — stop a sending campaign. Unsent recipients stay pending, so it can be resumed.
+- `resume` — restart a paused campaign. Sending begins again immediately.
+- `cancel` — **permanent.** Every pending recipient is marked `skipped` and cannot be
+  restored; the campaign cannot be resumed. Prefer `pause` unless the user wants to
+  abandon the campaign.
+
+### `manage_audiences`
+
+Reusable targeting definitions. `definition.type` is one of:
+
+- `crm_filter` — a kanban + status + filter conditions.
+- `ai_chat_eval` — an agent judges each contact's chat history against a
+  natural-language `criterion`, **at launch**, one LLM call per candidate on the
+  account's own provider key.
+- `contact_list` — an explicit phone list.
+
+#### `manage_audiences` — action: `create`
+
+**Request fields:** `name: string` (required), `description?`, `definition: object`
+(required, must include `type`). Small `contact_list` lists can be passed inline as
+`definition.entries`; larger ones go through `upload-entries`.
+
+**Response:** `{ audience }` — keep `audience.audienceId`.
+
+#### `manage_audiences` — action: `list`
+
+**Request fields:** `limit?`, `cursor?`. **Response:** `{ items, nextCursor? }`.
+
+#### `manage_audiences` — action: `get`
+
+**Request fields:** `audienceId` (required). A `contact_list` audience returns
+`entryCount`, never the entries themselves.
+
+#### `manage_audiences` — action: `update`
+
+**Request fields:** `audienceId` (required) plus `name?`, `description?`,
+`definition?`.
+
+#### `manage_audiences` — action: `delete`
+
+**Request fields:** `audienceId` (required).
+
+#### `manage_audiences` — action: `preview`
+
+Estimate how many contacts a `definition` matches **without saving it**. Run this
+before every launch.
+
+**Request fields:** `definition: object` (required).
+
+**Response:** `{ estimatedSize, aiEvalRunsAtLaunch?, candidates? }`. For
+`ai_chat_eval`, `aiEvalRunsAtLaunch` is true and `estimatedSize` is the candidate
+pool — which is also the number of LLM calls the user will pay for at launch.
+
+#### `manage_audiences` — action: `resolve`
+
+Re-run the audience's filter and store the count. **Request fields:** `audienceId`
+(required), `materialize?: boolean` — pass `true` to freeze the member set, which a
+delivery needs before it can use `audienceMode: "snapshot"`.
+
+**Response:** `{ audienceId, resolvedCount, lastResolvedAt, materialized }`.
+
+#### `manage_audiences` — action: `upload-entries`
+
+Replace a `contact_list` audience's members. **Three phases, in strict order:**
+
+| field | type | required | description |
+|-------|------|----------|-------------|
+| audienceId | string | yes | The audience id. |
+| phase | "begin" \| "append" \| "commit" | yes | See below. |
+| entries | array | for `append` | `{ phone, name? }`, max **500** per call. |
+
+1. `begin` — clears the previous list. **Repeat it until the response has
+   `clearComplete: true`**; the clear is bounded per request.
+2. `append` — up to 500 entries per call; repeat until the whole list is sent.
+3. `commit` — finalizes. **Always finish with this** — a campaign cannot launch
+   while `entriesUploading` is still set.
+
+**Response:** `{ audienceId, written, entryCount?, entriesUploading, clearComplete? }`.
+
+#### `manage_audiences` — action: `performance`
+
+Aggregate send/delivery performance for an audience across every campaign that used
+it. **Request fields:** `audienceId` (required).
+
+### `manage_deliveries`
+
+The units that actually send. Nested under a campaign.
+
+#### `manage_deliveries` — action: `create`
+
+**Request fields:**
+
+| field | type | required | description |
+|-------|------|----------|-------------|
+| campaignId | string | yes | The parent campaign. |
+| name | string | yes | Delivery name. |
+| audienceId | string | yes | From `manage_audiences`. |
+| audienceMode | "live" \| "snapshot" | yes | `live` re-runs the filter at launch; `snapshot` uses the materialized set. |
+| channelId | string | yes | From `manage_channels`. |
+| message | object | yes | See below. |
+| schedule | object | yes | See below. |
+
+`message` — `{ mode, … }` where `mode` is:
+
+- `fixed_template` — one template: `templateName`, `languageCode`,
+  `variableMapping?`, `mediaHeader?`.
+- `ai_select_template` — an agent picks per contact: `candidateTemplateNames[]`,
+  `selectionAgentId`.
+- `rotate_templates` — round-robin over `candidateTemplateNames[]`.
+
+Non-WhatsApp channels send `content` (raw text) instead of a template.
+`optOutButtonTexts?` lists quick-reply texts that count as an opt-out.
+
+`schedule` — `{ mode: "now" | "scheduled", sendAt?, throttlePerMinute,
+respectQuietHours, quietHoursStart?, quietHoursEnd?, timezone }`.
+
+**Response:** `{ delivery }`.
+
+#### `manage_deliveries` — action: `list`
+
+**Request fields:** `campaignId` (required). **Response:** `{ items }`.
+
+#### `manage_deliveries` — actions: `get` / `update` / `delete`
+
+All take `campaignId` and `deliveryId` (both required). `update` also accepts any
+`create` field; it is allowed only while the delivery is `draft` or `scheduled`.
+
+### `campaign_reports`
+
+#### `campaign_reports` — action: `report`
+
+One campaign's full report.
+
+**Request fields:**
+
+| field | type | required | description |
+|-------|------|----------|-------------|
+| campaignId | string | yes | The campaign. |
+| recipientsLimit | number | no | Page size for the recipient list. |
+| recipientsCursor | string | no | Pagination cursor. |
+| recipientStatus | string | no | Narrow the drill-down: `pending`, `queued`, `sent`, `delivered`, `read`, `replied`, `failed`, `skipped`, `opted_out`, `converted`. |
+
+**Response:** funnel stats (`sent`, `delivered`, `read`, `replied`, `failed`,
+`skipped`, `optedOut`, `converted`), a per-delivery breakdown, a timeseries, and a
+paginated recipient list.
+
+#### `campaign_reports` — action: `compare`
+
+Compare campaigns side by side. **Request fields:** `ids?: string` — a
+**comma-separated** list of campaign ids (e.g. `"camp_1,camp_2"`). Omit it to
+compare every campaign on the account.
